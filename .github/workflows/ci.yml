@@ -36,7 +36,6 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const core = require('@actions/core');
             const githubLib = require('@actions/github');
             const ev = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
             const headRepo = ev.pull_request && ev.pull_request.head && ev.pull_request.head.repo;
