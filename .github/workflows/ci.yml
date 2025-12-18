@@ -44,9 +44,24 @@ jobs:
               core.info('PR is from a fork; skipping comment (GITHUB_TOKEN restricted for forks).');
               return;
             }
-            const cov = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
-            const pct = cov.totals && cov.totals.percent;
-            const body = pct ? `Unit test coverage: ${pct.toFixed(2)}%` : 'カバレッジ情報を取得できませんでした。';
+            let cov;
+            try {
+              cov = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
+            } catch (e) {
+              core.info('coverage.json not found or invalid: ' + e.message);
+            }
+            core.info('coverage.json content: ' + JSON.stringify(cov));
+            let pct = cov && cov.totals && cov.totals.percent;
+            // Fallback: compute percent from covered/num_statements if available
+            if ((pct === undefined || pct === null) && cov && cov.totals && cov.totals.covered != null && cov.totals.num_statements) {
+              pct = (cov.totals.covered / cov.totals.num_statements) * 100;
+            }
+            let body;
+            if (pct === undefined || pct === null || Number.isNaN(pct)) {
+              body = 'カバレッジ情報を取得できませんでした。\ncoverage.json contents: ' + JSON.stringify(cov);
+            } else {
+              body = `Unit test coverage: ${pct.toFixed(2)}%`;
+            }
             const pr = ev.pull_request.number;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
