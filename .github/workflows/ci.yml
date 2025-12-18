@@ -47,8 +47,7 @@ jobs:
             const pct = cov.totals && cov.totals.percent;
             const body = pct ? `Unit test coverage: ${pct.toFixed(2)}%` : 'カバレッジ情報を取得できませんでした。';
             const pr = ev.pull_request.number;
-            const oct = github.getOctokit(process.env.GH_PAT || process.env.GITHUB_TOKEN);
-            await oct.rest.issues.createComment({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr,
