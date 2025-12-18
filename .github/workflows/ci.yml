@@ -29,26 +29,26 @@ jobs:
           python -m coverage run -m unittest discover -v
           python -m coverage json -o coverage.json
 
-        - name: Post coverage to PR (using actions/github-script)
-          uses: actions/github-script@v6
-          with:
-            script: |
-              const fs = require('fs');
-              const ev = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-              // If head repo is a fork, GITHUB_TOKEN may be restricted — skip in that case.
-              const headRepo = ev.pull_request && ev.pull_request.head && ev.pull_request.head.repo;
-              if (headRepo && headRepo.fork) {
-                core = require('@actions/core');
-                core.info('PR is from a fork; skipping comment (GITHUB_TOKEN restricted for forks).');
-                return;
-              }
-              const cov = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
-              const pct = cov.totals && cov.totals.percent;
-              const body = pct ? `Unit test coverage: ${pct.toFixed(2)}%` : 'カバレッジ情報を取得できませんでした。';
-              const pr = ev.pull_request.number;
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr,
-                body: body
-              });
+      - name: Post coverage to PR (using actions/github-script)
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const ev = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+            // If head repo is a fork, GITHUB_TOKEN may be restricted — skip in that case.
+            const headRepo = ev.pull_request && ev.pull_request.head && ev.pull_request.head.repo;
+            if (headRepo && headRepo.fork) {
+              core = require('@actions/core');
+              core.info('PR is from a fork; skipping comment (GITHUB_TOKEN restricted for forks).');
+              return;
+            }
+            const cov = JSON.parse(fs.readFileSync('coverage.json', 'utf8'));
+            const pct = cov.totals && cov.totals.percent;
+            const body = pct ? `Unit test coverage: ${pct.toFixed(2)}%` : 'カバレッジ情報を取得できませんでした。';
+            const pr = ev.pull_request.number;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr,
+              body: body
+            });
