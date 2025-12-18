@@ -36,7 +36,6 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const githubLib = require('@actions/github');
             const ev = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
             const headRepo = ev.pull_request && ev.pull_request.head && ev.pull_request.head.repo;
             // If no GH_PAT and PR is from a fork, skip because GITHUB_TOKEN may be restricted.
@@ -48,8 +47,7 @@ jobs:
             const pct = cov.totals && cov.totals.percent;
             const body = pct ? `Unit test coverage: ${pct.toFixed(2)}%` : 'カバレッジ情報を取得できませんでした。';
             const pr = ev.pull_request.number;
-            const token = process.env.GH_PAT || process.env.GITHUB_TOKEN;
-            const oct = githubLib.getOctokit(token);
+            const oct = github.getOctokit(process.env.GH_PAT || process.env.GITHUB_TOKEN);
             await oct.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
