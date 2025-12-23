@@ -27,7 +27,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python -m coverage run -m unittest discover -v
+          python -m coverage run --source=program -m unittest discover -s unittest
           python -m coverage json -o coverage.json
           # 総合カバレッジが80%未満の場合にジョブを失敗させる
           python -m coverage report --fail-under=80
