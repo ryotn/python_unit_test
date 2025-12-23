@@ -5,6 +5,9 @@ from program.main import add_one
 class TestAddOne(unittest.TestCase):
     def test_add_one_int(self):
         self.assertEqual(add_one(1), 2)
+        self.assertEqual(add_one(11), 12)
+        self.assertEqual(add_one(13), 14)
+
 
     def test_add_one_zero(self):
         self.assertEqual(add_one(0), 1)
