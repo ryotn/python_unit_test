@@ -18,7 +18,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.11.0'
 
       - name: Install dependencies
         run: |
@@ -27,10 +27,13 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python -m coverage run -m unittest discover -v
+          python -m coverage run --source=program -m unittest discover -s unittest
           python -m coverage json -o coverage.json
+          # 総合カバレッジが80%未満の場合にジョブを失敗させる
+          python -m coverage report --fail-under=80
 
       - name: Post coverage to PR (single step, GH_PAT fallback)
+        if: ${{ always() }}
         uses: actions/github-script@v6
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
@@ -39,7 +42,7 @@ jobs:
             const fs = require('fs');
             const ev = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
             const headRepo = ev.pull_request && ev.pull_request.head && ev.pull_request.head.repo;
-            // If no GH_PAT and PR is from a fork, skip because GITHUB_TOKEN may be restricted.
+            // GH_PATが無く、PRがフォークからのものなら、GITHUB_TOKENが制限される可能性があるためスキップする
             if (!process.env.GH_PAT && headRepo && headRepo.fork) {
               core.info('PR is from a fork; skipping comment (GITHUB_TOKEN restricted for forks).');
               return;
@@ -57,7 +60,7 @@ jobs:
               body = 'カバレッジ情報を取得できませんでした。\ncoverage.json contents: ' + JSON.stringify(cov);
             } else {
               const totals = cov.totals;
-              // Build markdown table
+              // マークダウンの表を作成
               const header = '## Test Coverage\n\n| File | Covered / Total | % |\n|---|---:|---:|';
               const rows = [];
               if (cov.files) {
@@ -68,7 +71,7 @@ jobs:
                   const pct = s.percent_covered != null ? Number(s.percent_covered) : (s.percent_statements_covered != null ? Number(s.percent_statements_covered) : null);
                   const pctStr = (pct == null || Number.isNaN(pct)) ? 'N/A' : `${pct.toFixed(2)}%`;
                   let row = `| ${fname} | ${covered}/${total} | ${pctStr} |`;
-                  // append missing lines if any
+                  // 欠落している行があれば補足として追加表示
                   if (fdata.missing_lines && fdata.missing_lines.length) {
                     row += `  \n> Missing lines: ${fdata.missing_lines.join(', ')}`;
                   }
@@ -81,6 +84,10 @@ jobs:
               const totalPctStr = (totalPct == null || Number.isNaN(totalPct)) ? 'N/A' : `${totalPct.toFixed(2)}%`;
               const totalRow = `| **Total** | ${totalCovered}/${totalNum} | ${totalPctStr} |`;
               body = header + '\n' + rows.join('\n') + '\n' + totalRow;
+              // カバレッジ率が80%未満の場合、警告を追加
+              if (totalPct != null && !Number.isNaN(totalPct) && totalPct < 80) {
+                body += `\n\n<font color="red">⚠️ カバレッジが80%未満です: ${totalPctStr}</font>`;
+              }
             }
             const pr = ev.pull_request.number;
             await github.rest.issues.createComment({
