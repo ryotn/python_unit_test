@@ -61,7 +61,7 @@ jobs:
             } else {
               const totals = cov.totals;
               // マークダウンの表を作成
-              const header = '## Test Coverage\n\n| File | Covered / Total | % |\n|---|---:|---:|';
+              const header = '## Test Coverage\n\n| File | Covered / Total | % | Comment |\n|---|---:|---:|---:|';
               const rows = [];
               if (cov.files) {
                 for (const [fname, fdata] of Object.entries(cov.files)) {
@@ -70,11 +70,13 @@ jobs:
                   const total = s.num_statements != null ? s.num_statements : (s.statements || 0);
                   const pct = s.percent_covered != null ? Number(s.percent_covered) : (s.percent_statements_covered != null ? Number(s.percent_statements_covered) : null);
                   const pctStr = (pct == null || Number.isNaN(pct)) ? 'N/A' : `${pct.toFixed(2)}%`;
-                  let row = `| ${fname} | ${covered}/${total} | ${pctStr} |`;
+                  let comment = '';
                   // 欠落している行があれば補足として追加表示
                   if (fdata.missing_lines && fdata.missing_lines.length) {
-                    row += `  \n> Missing lines: ${fdata.missing_lines.join(', ')}`;
+                    comment = `Missing lines: ${fdata.missing_lines.join(', ')}`;
                   }
+                  let row = `| ${fname} | ${covered}/${total} | ${pctStr} | ${comment} |`;
+
                   rows.push(row);
                 }
               }
