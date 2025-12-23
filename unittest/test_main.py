@@ -1,5 +1,5 @@
 import unittest
-from main import add_one
+from program.main import add_one
 
 
 class TestAddOne(unittest.TestCase):
