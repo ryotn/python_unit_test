@@ -27,7 +27,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python -m coverage run --source=program -m unittest discover -s unittest
+          python -m coverage run --branch --source=program -m unittest discover -s unittest
           python -m coverage json -o coverage.json
           # 総合カバレッジが80%未満の場合にジョブを失敗させる
           python -m coverage report --fail-under=80
@@ -61,7 +61,7 @@ jobs:
             } else {
               const totals = cov.totals;
               // マークダウンの表を作成
-              const header = '## Test Coverage\n\n| File | Covered / Total | % | Comment |\n|---|---:|---:|---:|';
+              const header = '## Test Coverage\n\n| File | Covered / Total | % | Branches (covered/total) | Branch % | Comment |\n|---|---:|---:|---:|---:|---:|';
               const rows = [];
               if (cov.files) {
                 for (const [fname, fdata] of Object.entries(cov.files)) {
@@ -75,16 +75,28 @@ jobs:
                   if (fdata.missing_lines && fdata.missing_lines.length) {
                     comment = `Missing lines: ${fdata.missing_lines.join(', ')}`;
                   }
-                  let row = `| ${fname} | ${covered}/${total} | ${pctStr} | ${comment} |`;
+                  const numBranches = s.num_branches != null ? s.num_branches : (s.num_branches || 0);
+                  const coveredBranches = s.covered_branches != null ? s.covered_branches : (s.covered_branches || 0);
+                  const branchPct = (numBranches && numBranches > 0) ? (coveredBranches / numBranches * 100) : null;
+                  const branchPctStr = (branchPct == null || Number.isNaN(branchPct)) ? 'N/A' : `${branchPct.toFixed(2)}%`;
+                  if (fdata.missing_branches && fdata.missing_branches.length) {
+                    const mb = fdata.missing_branches.map(b => Array.isArray(b) ? b.join('→') : String(b)).join(', ');
+                    comment = comment ? `${comment}; Missing branches: ${mb}` : `Missing branches: ${mb}`;
+                  }
+                  let row = `| ${fname} | ${covered}/${total} | ${pctStr} | ${coveredBranches}/${numBranches} | ${branchPctStr} | ${comment} |`;
 
                   rows.push(row);
                 }
               }
               const totalCovered = totals.covered_lines != null ? totals.covered_lines : totals.covered || 0;
-              const totalNum = totals.num_statements != null ? totals.num_statements : totals.statements || 0;
+              const totalNum = totals.num_statements != null ? totals.num_statements : (totals.statements || 0);
               const totalPct = totals.percent_covered != null ? Number(totals.percent_covered) : (totals.percent_statements_covered != null ? Number(totals.percent_statements_covered) : null);
               const totalPctStr = (totalPct == null || Number.isNaN(totalPct)) ? 'N/A' : `${totalPct.toFixed(2)}%`;
-              const totalRow = `| **Total** | ${totalCovered}/${totalNum} | ${totalPctStr} |`;
+              const totalBranches = totals.num_branches != null ? totals.num_branches : (totals.num_branches || 0);
+              const totalCoveredBranches = totals.covered_branches != null ? totals.covered_branches : (totals.covered_branches || 0);
+              const totalBranchPct = (totalBranches && totalBranches > 0) ? (totalCoveredBranches / totalBranches * 100) : null;
+              const totalBranchPctStr = (totalBranchPct == null || Number.isNaN(totalBranchPct)) ? 'N/A' : `${totalBranchPct.toFixed(2)}%`;
+              const totalRow = `| **Total** | ${totalCovered}/${totalNum} | ${totalPctStr} | ${totalCoveredBranches}/${totalBranches} | ${totalBranchPctStr} | |`;
               body = header + '\n' + rows.join('\n') + '\n' + totalRow;
               // カバレッジ率が80%未満の場合、警告を追加
               if (totalPct != null && !Number.isNaN(totalPct) && totalPct < 80) {

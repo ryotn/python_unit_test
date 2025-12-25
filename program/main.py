@@ -9,3 +9,9 @@ def add_one(value):
 
 def multiply_by_two(value):
     return value * 2
+
+def my_partial_fn(x):
+    y = 0
+    if x:
+        y = 10
+    return y
