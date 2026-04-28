@@ -9,7 +9,8 @@
 ├── program/
 │   ├── main.py       # サンプルの関数群 (add_one, multiply_by_two, my_partial_fn)
 │   └── main2.py      # サンプルの関数群 (add_three)
-├── unittest/
+├── tests/
+│   ├── __init__.py
 │   └── test_main.py  # program/main.py に対するユニットテスト
 ├── README.md         # このファイル
 ├── requirements.txt  # 依存関係 (coverage>=6.5)
